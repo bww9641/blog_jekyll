@@ -1,0 +1,5 @@
+cd ~/jekyll/moonwalk
+bundle exec jekyll serve --destination ../blog_jekyll
+cd ../blog_jekyll
+git commit --allow-empty -m "rebuild"
+git push origin main
