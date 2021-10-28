@@ -92,7 +92,7 @@
 
 <p><em>post will be frequently updated</em></p>
 
-<h3 id="ssti-server-side-template-injection">SSTI (Server Side Template Injection)</h3>
+<h2 id="ssti-server-side-template-injection">SSTI (Server Side Template Injection)</h2>
 <p>해당 취약점은 웹 프레임워크에서 사용되는 여러 가지 Template Engine에서 발생하며, 특별한 구문을 통해 <code class="language-plaintext highlighter-rouge">RCE</code>를 일으킬 수도 있다.<br />
 This vulnerability occurs in various Template Engines used in web frameworks, RCE and can also be triggered through special syntax.</p>
 
@@ -122,7 +122,7 @@ This vulnerability occurs in various Template Engines used in web frameworks, RC
 
 <p><br /></p>
 
-<h3 id="sqli-sql-injection">SQLI (sql injection)</h3>
+<h2 id="sqli-sql-injection">SQLI (sql injection)</h2>
 <p>해당 취약점은 DB를 관리하는 응용 프로그램에서 SQL 쿼리를 전달할 때 의도하지 않은 구문을 전달할 수 있도록 변조시키는 데 목적이 있다.<br />
 The vulnerability is aimed at modulating the DB management application to deliver unintended phrases when delivering SQL queries.</p>
 
@@ -188,7 +188,7 @@ The vulnerability is aimed at modulating the DB management application to delive
 
 <p><br /></p>
 
-<h3 id="python-pickle-deserialization">python pickle deserialization</h3>
+<h2 id="python-pickle-deserialization">python pickle deserialization</h2>
 <p><code class="language-plaintext highlighter-rouge">pickle</code>로 직렬화된 객체가 변조되어 역직렬화하는 과정에서 시스템에 접근하거나 의도치 않은 것이 실행되기도 한다. 원하는 class를 선언한 뒤, <code class="language-plaintext highlighter-rouge">__reduce__</code>를 통하여 <code class="language-plaintext highlighter-rouge">pickle.loads</code> 함수에서 unpickle 시 <code class="language-plaintext highlighter-rouge">tuple</code>을 반환하여 함수를 실행시킬 수 있다.</p>
 
 <div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">os</span>

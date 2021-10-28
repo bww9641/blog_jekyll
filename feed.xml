@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator><link href="https://ainset.in//feed.xml" rel="self" type="application/atom+xml" /><link href="https://ainset.in//" rel="alternate" type="text/html" /><updated>2021-10-27T15:31:30+09:00</updated><id>https://ainset.in//feed.xml</id><title type="html">Ainsetin 🇰🇷 ⚡</title><subtitle>I don wanna be a newbie... Try to be the Expert!
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator><link href="https://ainset.in//feed.xml" rel="self" type="application/atom+xml" /><link href="https://ainset.in//" rel="alternate" type="text/html" /><updated>2021-10-28T10:23:52+09:00</updated><id>https://ainset.in//feed.xml</id><title type="html">Ainsetin 🇰🇷 ⚡</title><subtitle>I don wanna be a newbie... Try to be the Expert!
 </subtitle><author><name>Ainsetin</name></author><entry><title type="html">web note (update 2021.10.27)</title><link href="https://ainset.in//web-note-update.html" rel="alternate" type="text/html" title="web note (update 2021.10.27)" /><published>2021-10-27T10:00:00+09:00</published><updated>2021-10-27T10:00:00+09:00</updated><id>https://ainset.in//web-note-update</id><content type="html" xml:base="https://ainset.in//web-note-update.html">&lt;p&gt;&lt;em&gt;post will be frequently updated&lt;/em&gt;&lt;/p&gt;
 
-&lt;h3 id=&quot;ssti-server-side-template-injection&quot;&gt;SSTI (Server Side Template Injection)&lt;/h3&gt;
+&lt;h2 id=&quot;ssti-server-side-template-injection&quot;&gt;SSTI (Server Side Template Injection)&lt;/h2&gt;
 &lt;p&gt;해당 취약점은 웹 프레임워크에서 사용되는 여러 가지 Template Engine에서 발생하며, 특별한 구문을 통해 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RCE&lt;/code&gt;를 일으킬 수도 있다.&lt;br /&gt;
 This vulnerability occurs in various Template Engines used in web frameworks, RCE and can also be triggered through special syntax.&lt;/p&gt;
 
@@ -31,7 +31,7 @@ This vulnerability occurs in various Template Engines used in web frameworks, RC
 
 &lt;p&gt;&lt;br /&gt;&lt;/p&gt;
 
-&lt;h3 id=&quot;sqli-sql-injection&quot;&gt;SQLI (sql injection)&lt;/h3&gt;
+&lt;h2 id=&quot;sqli-sql-injection&quot;&gt;SQLI (sql injection)&lt;/h2&gt;
 &lt;p&gt;해당 취약점은 DB를 관리하는 응용 프로그램에서 SQL 쿼리를 전달할 때 의도하지 않은 구문을 전달할 수 있도록 변조시키는 데 목적이 있다.&lt;br /&gt;
 The vulnerability is aimed at modulating the DB management application to deliver unintended phrases when delivering SQL queries.&lt;/p&gt;
 
@@ -97,7 +97,7 @@ The vulnerability is aimed at modulating the DB management application to delive
 
 &lt;p&gt;&lt;br /&gt;&lt;/p&gt;
 
-&lt;h3 id=&quot;python-pickle-deserialization&quot;&gt;python pickle deserialization&lt;/h3&gt;
+&lt;h2 id=&quot;python-pickle-deserialization&quot;&gt;python pickle deserialization&lt;/h2&gt;
 &lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pickle&lt;/code&gt;로 직렬화된 객체가 변조되어 역직렬화하는 과정에서 시스템에 접근하거나 의도치 않은 것이 실행되기도 한다. 원하는 class를 선언한 뒤, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__reduce__&lt;/code&gt;를 통하여 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pickle.loads&lt;/code&gt; 함수에서 unpickle 시 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;tuple&lt;/code&gt;을 반환하여 함수를 실행시킬 수 있다.&lt;/p&gt;
 
 &lt;div class=&quot;language-py highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;os&lt;/span&gt;
