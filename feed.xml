@@ -1,5 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator><link href="https://ainset.in//feed.xml" rel="self" type="application/atom+xml" /><link href="https://ainset.in//" rel="alternate" type="text/html" /><updated>2021-10-28T10:45:11+09:00</updated><id>https://ainset.in//feed.xml</id><title type="html">Ainsetin 🇰🇷 ⚡</title><subtitle>I don wanna be a newbie... Try to be the Expert!
-</subtitle><author><name>Ainsetin</name></author><entry><title type="html">web note (update 2021.10.27)</title><link href="https://ainset.in//web-note-update.html" rel="alternate" type="text/html" title="web note (update 2021.10.27)" /><published>2021-10-27T10:00:00+09:00</published><updated>2021-10-27T10:00:00+09:00</updated><id>https://ainset.in//web-note-update</id><content type="html" xml:base="https://ainset.in//web-note-update.html">&lt;p&gt;&lt;em&gt;post will be frequently updated&lt;/em&gt;&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator><link href="https://ainset.in//feed.xml" rel="self" type="application/atom+xml" /><link href="https://ainset.in//" rel="alternate" type="text/html" /><updated>2021-11-09T08:05:09+09:00</updated><id>https://ainset.in//feed.xml</id><title type="html">Ainsetin 🇰🇷 ⚡</title><subtitle>I don wanna be a newbie... Try to be the Expert!
+</subtitle><author><name>Ainsetin</name></author><entry><title type="html">Personal R&amp;amp;D plan beginning from ‘now’</title><link href="https://ainset.in//list-after-graduate.html" rel="alternate" type="text/html" title="Personal R&amp;amp;D plan beginning from ‘now’" /><published>2021-11-08T17:00:00+09:00</published><updated>2021-11-08T17:00:00+09:00</updated><id>https://ainset.in//list-after-graduate</id><content type="html" xml:base="https://ainset.in//list-after-graduate.html">&lt;p&gt;This is my plan to be finished until/after graduating.&lt;/p&gt;
+
+&lt;h2 id=&quot;research&quot;&gt;Research&lt;/h2&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;§ must be finished until new year’s day §&lt;/p&gt;
+  &lt;ol&gt;
+    &lt;li&gt;Kernel : Dirty Cow Analysis (CVE-2016-5195) -processing&lt;/li&gt;
+    &lt;li&gt;Browser V8 : Study/Build V8 frequently and get shell from V8 Engine -not yet&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;develop&quot;&gt;Develop&lt;/h2&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;§ new year STUDY plan §&lt;/p&gt;
+  &lt;ol&gt;
+    &lt;li&gt;Making interpreter/compiler with Rust -not yet (With Chris Ohk, ..)&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;goal&quot;&gt;Goal&lt;/h2&gt;
+&lt;blockquote&gt;
+  &lt;ul&gt;
+    &lt;li&gt;Try something &lt;strong&gt;“new”&lt;/strong&gt;, &lt;a href=&quot;https://youtu.be/c6rP-YP4c5I&quot;&gt;&lt;strong&gt;Try Everything&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;Pass any awesome Univ.’s admission&lt;/li&gt;
+    &lt;li&gt;Pass drive license (maybe in November)&lt;/li&gt;
+    &lt;li&gt;Dreamhack Wargame 1st
+      &lt;ul&gt;
+        &lt;li&gt;Format Sniper (Learn &amp;amp; Analyze about FSB)&lt;/li&gt;
+        &lt;li&gt;Dreamcurl (Rev O, Crypto X. So learn mathematics!)&lt;/li&gt;
+        &lt;li&gt;Unibitmap (:Thinking:)&lt;/li&gt;
+        &lt;li&gt;dreamboard v2 (V8,,V8,,V8,,V8,,V8,,)&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/li&gt;
+    &lt;li&gt;Purchase another laptop (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DELL XPS&lt;/code&gt; or &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MacBook M1X Pro&lt;/code&gt; or &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Surface Laptop Studio&lt;/code&gt;)&lt;/li&gt;
+    &lt;li&gt;BoB (Best of the Best) 11th? 12th?&lt;/li&gt;
+    &lt;li&gt;Try to be the BEST without &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;competitive mind&lt;/code&gt;, Just &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;enjoy&lt;/code&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;</content><author><name>Ainsetin</name></author><category term="etc" /><summary type="html">This is my plan to be finished until/after graduating. Research § must be finished until new year’s day § Kernel : Dirty Cow Analysis (CVE-2016-5195) -processing Browser V8 : Study/Build V8 frequently and get shell from V8 Engine -not yet Develop § new year STUDY plan § Making interpreter/compiler with Rust -not yet (With Chris Ohk, ..) Goal Try something “new”, Try Everything Pass any awesome Univ.’s admission Pass drive license (maybe in November) Dreamhack Wargame 1st Format Sniper (Learn &amp;amp; Analyze about FSB) Dreamcurl (Rev O, Crypto X. So learn mathematics!) Unibitmap (:Thinking:) dreamboard v2 (V8,,V8,,V8,,V8,,V8,,) Purchase another laptop (DELL XPS or MacBook M1X Pro or Surface Laptop Studio) BoB (Best of the Best) 11th? 12th? Try to be the BEST without competitive mind, Just enjoy</summary></entry><entry><title type="html">web note (update 2021.10.27)</title><link href="https://ainset.in//web-note-update.html" rel="alternate" type="text/html" title="web note (update 2021.10.27)" /><published>2021-10-27T10:00:00+09:00</published><updated>2021-10-27T10:00:00+09:00</updated><id>https://ainset.in//web-note-update</id><content type="html" xml:base="https://ainset.in//web-note-update.html">&lt;p&gt;&lt;em&gt;post will be frequently updated&lt;/em&gt;&lt;/p&gt;
 
 &lt;h2 id=&quot;ssti-server-side-template-injection&quot;&gt;SSTI (Server Side Template Injection)&lt;/h2&gt;
 &lt;p&gt;해당 취약점은 웹 프레임워크에서 사용되는 여러 가지 Template Engine에서 발생하며, 특별한 구문을 통해 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RCE&lt;/code&gt;를 일으킬 수도 있다.&lt;br /&gt;
