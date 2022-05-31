@@ -29,7 +29,7 @@
 <meta name="twitter:site" content="@ainsetin" />
 <meta name="twitter:creator" content="@Ainsetin" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","url":"https://ainset.in//start-again.html","headline":"Start Again","dateModified":"2021-10-15T21:33:00+09:00","datePublished":"2021-10-15T21:33:00+09:00","author":{"@type":"Person","name":"Ainsetin"},"description":"My second github blog start 🎇 Using jekyll again ✨ It was fun! 🎉 And it can be set easily~ 🎃 This formula $f(x) = x^2$ is an example. [\\lim_{x\\to 0}{\\frac{e^x-1}{2x}} \\overset{\\left[\\frac{0}{0}\\right]}{\\underset{\\mathrm{H}}{=}} \\lim_{x\\to 0}{\\frac{e^x}{2}}={\\frac{1}{2}}] [\\begin{aligned} a^2 + b^2 &amp;= c^2 \\ E &amp;= M \\cdot C^2 \\ &amp;= xy + \\mathbb{E} \\end{aligned}] 테마가 마음에 안들어서 다시 바꿨습니다.","mainEntityOfPage":{"@type":"WebPage","@id":"https://ainset.in//start-again.html"},"@context":"https://schema.org"}</script>
+{"@type":"BlogPosting","url":"https://ainset.in//start-again.html","headline":"Start Again","dateModified":"2021-10-15T21:33:00+09:00","datePublished":"2021-10-15T21:33:00+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://ainset.in//start-again.html"},"author":{"@type":"Person","name":"Ainsetin"},"description":"My second github blog start 🎇 Using jekyll again ✨ It was fun! 🎉 And it can be set easily~ 🎃 This formula $f(x) = x^2$ is an example. [\\lim_{x\\to 0}{\\frac{e^x-1}{2x}} \\overset{\\left[\\frac{0}{0}\\right]}{\\underset{\\mathrm{H}}{=}} \\lim_{x\\to 0}{\\frac{e^x}{2}}={\\frac{1}{2}}] [\\begin{aligned} a^2 + b^2 &amp;= c^2 \\ E &amp;= M \\cdot C^2 \\ &amp;= xy + \\mathbb{E} \\end{aligned}] 테마가 마음에 안들어서 다시 바꿨습니다.","@context":"https://schema.org"}</script>
 <script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
 <!-- End Jekyll SEO tag -->
 
@@ -58,13 +58,16 @@
         document.documentElement.setAttribute('data-theme', 'dark');
         localStorage.setItem('theme', 'dark');
       }
+      window.setTimeout(() => {
+        disqus();
+      }, 300);
     });
 
     let transition = () => {
       document.documentElement.classList.add('transition');
       window.setTimeout(() => {
         document.documentElement.classList.remove('transition');
-      }, 1000);
+      }, 200);
     }
   }
 </script>
@@ -103,7 +106,7 @@
 </p>
 
 <div class="soopr-btn"
-   data-twitter="SooprCo"
+   data-twitter="ainsetin"
 >
 </div>
 
@@ -142,12 +145,13 @@ E &amp;= M \cdot C^2 \\
     this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
     };
     */
-    (function() { // DON'T EDIT BELOW THIS LINE
+    function disqus() { // DON'T EDIT BELOW THIS LINE
     var d = document, s = d.createElement('script');
     s.src = 'https://ainsetin.disqus.com/embed.js';
     s.setAttribute('data-timestamp', +new Date());
     (d.head || d.body).appendChild(s);
-    })();
+    };
+    disqus();
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 

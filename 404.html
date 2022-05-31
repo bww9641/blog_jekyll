@@ -56,13 +56,16 @@
         document.documentElement.setAttribute('data-theme', 'dark');
         localStorage.setItem('theme', 'dark');
       }
+      window.setTimeout(() => {
+        disqus();
+      }, 300);
     });
 
     let transition = () => {
       document.documentElement.classList.add('transition');
       window.setTimeout(() => {
         document.documentElement.classList.remove('transition');
-      }, 1000);
+      }, 200);
     }
   }
 </script>
@@ -81,7 +84,7 @@
 </p>
 
 <div class="soopr-btn"
-   data-twitter="SooprCo"
+   data-twitter="ainsetin"
 >
 </div>
 
